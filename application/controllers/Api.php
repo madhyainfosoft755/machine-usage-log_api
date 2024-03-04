@@ -7,12 +7,60 @@ class Api extends CI_Controller {
     
     public function __construct() {
         parent::__construct();
+        Header('Access-Control-Allow-Origin: *'); //for allow any domain, insecure
+        Header('Access-Control-Allow-Headers: *'); //for allow any headers, insecure
+        Header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE'); //method allowed
+        Header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-Request-With');
+      
         $this->load->model('Api_model');
         $this->load->library('form_validation');
+        $this->load->helper('jwt_helper.php');
+        $this->load->helper('verifyAuthToken_helper.php');
 
+     }   
+
+
+    public function login() {
+        $jwt = new JWT();
+        $jwtSecretkey = "myloginSecret";
+    
+        $email = $this->input->post('user_email');
+        $password = $this->input->post('user_password');
+    
+        $user = $this->Api_model->CheckCredential($email,$password);
+    
+        if ($user) {
+            date_default_timezone_set('Asia/Kolkata');
+            $date = date('Y-m-d H:i:s', time());
+    
+            $token = $jwt->encode($user, $jwtSecretkey, 'HS256');
+            $result_t = array();
+            $result_t['sub'] = $user['user_email'];
+            $result_t['exp'] = time() + 172800; //172800;
+    
+            $data = array(
+                'user_name' => $user['user_name'],
+                'role' => $user['role_id']
+            );
+    
+            $res = array(
+                'status' => 'success',
+                'token' => $token,
+                'user' => $data,
+            );
+            echo json_encode($res);
+        } else {
+            $res = array(
+                'status' => 'error',
+                'message' => 'Invalid Credentials!',
+            );
+            echo json_encode($res);
+        }
     }
+    
 
-    function index()
+
+    function fetchAllData()
     {
         $this->load->model('api_model');
         $data = $this->api_model->fetch_all('users','user_id', 'ASC');
@@ -25,7 +73,8 @@ class Api extends CI_Controller {
     
 
 
-    public function insert() {
+    public function insert()
+    {
         $data = array(
             'user_name'     => $this->input->post('user_name'),
             'user_email'    => $this->input->post('user_email'),
@@ -70,6 +119,15 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
         }
     }
+
+
+  
+
+
+
+
+
+
 }
 
        

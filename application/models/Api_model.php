@@ -36,6 +36,28 @@ class Api_model extends CI_Model {
         $this->db->where($where);
         return $this->db->delete($table);
     }
+
+
+    //login user
+    public function CheckCredential($email, $password) 
+    {
+        $this->db->select('*');
+        $this->db->from('users');
+        $this->db->where(array('user_email' => $email, 'user_password' => $password)); // Checking both email and password
+        $this->db->limit(1);
+        $query = $this->db->get();
+        if ($query->num_rows() == 1) {
+            return $query->row_array(); 
+        } else {
+            return false;
+        }
+    }
+
+
+
+
+
+
 }
 
 
