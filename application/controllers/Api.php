@@ -1,6 +1,4 @@
-
 <?php
-
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Api extends CI_Controller {
@@ -16,11 +14,62 @@ class Api extends CI_Controller {
         $this->load->library('form_validation');
         $this->load->helper('jwt_helper.php');
         $this->load->helper('verifyAuthToken_helper.php');
+    }   
 
-     }   
 
+    public function verifyAuthToken($token)
+    {
+        $jwt = new JWT();
+        $jwtSecret = 'myloginSecret';
+      
+        $verification = $jwt->decode($token, $jwtSecret, 'HS256');
+        return $verification;
+        
+       
+    }
+    public function authUserToken($roleArr)
+    {
+        $req = $this->input->request_headers();
+        if (array_key_exists('Authorization', $req)) {
+            $token = ltrim(substr($req['Authorization'], 6));
+            
+            $token_data = $this->verifyAuthToken($token);
+            //  print_r($token_data);
+            date_default_timezone_set('Asia/Kolkata');
+            $current_date = date('Y-m-d H:i:s', time());
+            $token_date = date("Y-m-d H:i:s", $token_data->exp);
 
-    public function login() {
+            // echo strtotime($current_date);
+            // echo strtotime($token_date);
+            // echo strtotime($current_date) - strtotime($token_date);
+
+            if ((strtotime($current_date) - strtotime($token_date)) < 0) {
+                // get role from email
+                $user_email = $token_data->sub;
+                // return data getting by email
+                $res = $this->Api_model->getUserProfile('users', $user_email);
+                // print_r($res);
+                $role = $res['role_id'];
+                // if role of user is exist in $role arrya ten return false else data
+                if (in_array($role, $roleArr)) {
+                    return $res;
+                } else {
+                    //role is not matched means not autheticated for this action
+                    // echo "false";
+                    return false;
+                }
+                
+            } else {
+                // if tooken invalid or expired then return
+                return false;
+            }
+        } else {
+            //if auth key not in header then return
+            return false;
+        }
+    } 
+
+    public function Userlogin() {
         $jwt = new JWT();
         $jwtSecretkey = "myloginSecret";
     
@@ -33,11 +82,11 @@ class Api extends CI_Controller {
             date_default_timezone_set('Asia/Kolkata');
             $date = date('Y-m-d H:i:s', time());
     
-            $token = $jwt->encode($user, $jwtSecretkey, 'HS256');
             $result_t = array();
             $result_t['sub'] = $user['user_email'];
             $result_t['exp'] = time() + 172800; //172800;
-    
+            $token = $jwt->encode($result_t, $jwtSecretkey, 'HS256');
+
             $data = array(
                 'user_name' => $user['user_name'],
                 'role' => $user['role_id']
@@ -57,24 +106,54 @@ class Api extends CI_Controller {
             echo json_encode($res);
         }
     }
-    
 
-
-    function fetchAllData()
+    public function getUserProfile()
     {
-        $this->load->model('api_model');
-        $data = $this->api_model->fetch_all('users','user_id', 'ASC');
-        if ($data) {
-            echo json_encode(array('status'=>'success','data'=>$data));
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Token is valid
+            // Your getProfile logic 
+            $res = array(
+                'status' => 'success',
+                'user' => $token_data,
+            );
+            echo json_encode($res);
+        } elseif ($this->authUserToken() === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
-            echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
         }
     }
-    
 
-
-    public function insert()
+    public function fetchAllUserData()
     {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // all fetchAllData logic 
+            $data = $this->Api_model->fetch_all('users','user_id', 'ASC');
+            if ($data) {
+                echo json_encode(array('status'=>'success','data'=>$data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+            }
+        } elseif ($this->authUserToken() === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+
+   
+    public function UserInsert()
+    {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Token is valid
+           // insart logic
         $data = array(
             'user_name'     => $this->input->post('user_name'),
             'user_email'    => $this->input->post('user_email'),
@@ -89,48 +168,73 @@ class Api extends CI_Controller {
         } else {
             echo json_encode(array('status' => 'error', 'message' => 'Failed to insert user'));
         }
-    }
-
-    public function update($user_id) {
-        $where=array('user_id'=>$user_id);
-        $data = array(
-            'user_name'     => $this->input->post('user_name'),
-            'user_email'    => $this->input->post('user_email'),
-            'user_contact'  => $this->input->post('user_contact'),
-            'user_password' => $this->input->post('user_password')
-        );
-
-        
-        $result = $this->Api_model->update_user('users',$where, $data);
-
-        if ($result >0) {
-            echo json_encode(array('status' => 'success', 'message' => 'User updated successfully'));
+        } elseif ($this->authUserToken() === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
-            echo json_encode(array('status' => 'error', 'message' => 'Failed to update user'));
-        }
-    }
-    public function delete($user_id) {
-        $where=array('user_id'=>$user_id);
-        $result = $this->Api_model->delete_user('users',$where);
-
-        if ($result) {
-            echo json_encode(array('status' => 'success', 'message' => 'User deleted successfully'));
-        } else {
-            echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User not logged in'));
         }
     }
 
 
-  
 
+    public function UserUpdate($user_id) {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // valide token
+            //  update logic  
+            $where=array('user_id'=>$user_id);
+            $data = array(
+                'user_name'     => $this->input->post('user_name'),
+                'user_email'    => $this->input->post('user_email'),
+                'user_contact'  => $this->input->post('user_contact'),
+                'user_password' => $this->input->post('user_password')
+            );           
+            $result = $this->Api_model->update_user('users',$where, $data);
+    
+            if ($result >0) {
+                echo json_encode(array('status' => 'success', 'message' => 'User updated successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to update user'));
+            }
 
+        } elseif ($this->authUserToken() === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
 
-
-
-
+    public function UserDelete($user_id) {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            //  delete logic here  
+            $where=array('user_id'=>$user_id);
+            $result = $this->Api_model->delete_user('users',$where);
+    
+            if ($result) {
+                echo json_encode(array('status' => 'success', 'message' => 'User deleted successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
+            }
+        } elseif ($this->authUserToken() === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+    
+    
+   
+    
 }
 
-       
+  
             
 
 

@@ -53,7 +53,15 @@ class Api_model extends CI_Model {
         }
     }
 
+    public function getUserProfile($table,$user_email)
+    {
+        $this->db->select('*');
+        $this->db->from($table);
+        $this->db->where('user_email', $user_email);
+        $query = $this->db->get();
 
+        return $query->result_array()[0];
+    }
 
 
 
