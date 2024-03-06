@@ -39,19 +39,38 @@ class Api_model extends CI_Model {
 
 
     //login user
+    // public function CheckCredential($table,$email, $password) 
+    // {
+    //     $this->db->select('*');
+    //     $this->db->from($table);
+    //     $this->db->where(array('user_email' => $email, 'user_password' => $password)); // Checking both email and password
+    //     $this->db->limit(1);
+    //     $query = $this->db->get();
+    //     if ($query->num_rows() == 1) {
+    //         return $query->row_array(); 
+    //     } else {
+    //         return false;
+    //     }
+    // }
+
     public function CheckCredential($email, $password) 
     {
-        $this->db->select('*');
+        $this->db->select('users.*, roles.role');
         $this->db->from('users');
-        $this->db->where(array('user_email' => $email, 'user_password' => $password)); // Checking both email and password
+        $this->db->join('roles', 'users.role_id = roles.role_id', 'left');
+        $this->db->where(array('users.user_email' => $email, 'users.user_password' => $password)); // Checking both email and password
         $this->db->limit(1);
         $query = $this->db->get();
+    
         if ($query->num_rows() == 1) {
             return $query->row_array(); 
         } else {
             return false;
         }
     }
+    
+
+
 
     public function getUserProfile($table,$user_email)
     {
@@ -65,6 +84,12 @@ class Api_model extends CI_Model {
 
 
 
+    public function is_department_exists($department_name) {
+        // Query to check if department name already exists
+        $this->db->where('department_name', $department_name);
+        $query = $this->db->get('department');
+        return $query->num_rows() > 0;
+    }
 
 }
 

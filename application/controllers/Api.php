@@ -89,7 +89,7 @@ class Api extends CI_Controller {
 
             $data = array(
                 'user_name' => $user['user_name'],
-                'role' => $user['role_id']
+                'role' => $user['role']
             );
     
             $res = array(
@@ -118,7 +118,7 @@ class Api extends CI_Controller {
                 'user' => $token_data,
             );
             echo json_encode($res);
-        } elseif ($this->authUserToken() === false) {
+        } elseif ($this->token_data() === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -138,7 +138,7 @@ class Api extends CI_Controller {
             } else {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
             }
-        } elseif ($this->authUserToken() === false) {
+        } elseif ($this->token_data() === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -168,7 +168,7 @@ class Api extends CI_Controller {
         } else {
             echo json_encode(array('status' => 'error', 'message' => 'Failed to insert user'));
         }
-        } elseif ($this->authUserToken() === false) {
+        } elseif ($this->token_data() === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -199,7 +199,7 @@ class Api extends CI_Controller {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to update user'));
             }
 
-        } elseif ($this->authUserToken() === false) {
+        } elseif ($this->token_data() === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -220,7 +220,7 @@ class Api extends CI_Controller {
             } else {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
             }
-        } elseif ($this->authUserToken() === false) {
+        } elseif ($this->token_data() === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -231,6 +231,79 @@ class Api extends CI_Controller {
     
     
    
+    public function fetchAllDepartmentData()
+    {
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // all fetchAllData logic 
+            $data = $this->Api_model->fetch_all('department','department_id', 'ASC');
+            if ($data) {
+                echo json_encode(array('status'=>'success','data'=>$data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+            }
+        } elseif ($this->token_data() === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+
+   
+
+
+    public function DepartmentInsert()
+    {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Token is valid
+            
+            // Decode JSON input
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            // Get department name from the input
+            $department_name = $_POST['department_name'];
+            
+            // Check if department name already exists
+            if ($this->Api_model->is_department_exists($department_name)) {
+                // Department with the same name already exists
+                echo json_encode(array('status' => 'error', 'message' => 'Department with the same name already exists.'));
+            } else {
+                // Department with the same name does not exist, proceed with insertion
+                $data = array(
+                    'department_name' => $department_name
+                );
+                $result = $this->Api_model->insert_user('department', $data);
+    
+                if ($result) {
+                    echo json_encode(array('status' => 'success', 'message' => 'Department inserted successfully'));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to insert department'));
+                }
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin  can insert departments'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User not logged in'));
+        }
+    }
+   
+    
+    
+
+
+
+
+
+
+
+
+
+
     
 }
 
