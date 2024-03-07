@@ -61,7 +61,7 @@ class Api_model extends CI_Model {
         $this->db->where(array('users.user_email' => $email, 'users.user_password' => $password)); // Checking both email and password
         $this->db->limit(1);
         $query = $this->db->get();
-    
+
         if ($query->num_rows() == 1) {
             return $query->row_array(); 
         } else {
@@ -84,12 +84,16 @@ class Api_model extends CI_Model {
 
 
 
-    public function is_department_exists($department_name) {
-        // Query to check if department name already exists
-        $this->db->where('department_name', $department_name);
-        $query = $this->db->get('department');
+    public function is_exists($table, $where) {
+        // Check if a record exists in the specified table based on the given condition
+        $this->db->where($where);
+        $query = $this->db->get($table);
         return $query->num_rows() > 0;
     }
+
+
+
+
 
 }
 

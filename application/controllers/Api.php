@@ -118,7 +118,7 @@ class Api extends CI_Controller {
                 'user' => $token_data,
             );
             echo json_encode($res);
-        } elseif ($this->token_data() === false) {
+        } elseif ($token_data === false) { // Corrected function call
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -126,6 +126,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
         }
     }
+    
 
     public function fetchAllUserData()
     {
@@ -138,8 +139,7 @@ class Api extends CI_Controller {
             } else {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
             }
-        } elseif ($this->token_data() === false) {
-            // Token is invalid
+        } elseif ($token_data === false) {            // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
@@ -148,27 +148,46 @@ class Api extends CI_Controller {
     }
 
    
+
+
+
     public function UserInsert()
     {
         $token_data = $this->authUserToken([1]);
         if ($token_data) {
             // Token is valid
-           // insart logic
-        $data = array(
-            'user_name'     => $this->input->post('user_name'),
-            'user_email'    => $this->input->post('user_email'),
-            'user_contact'  => $this->input->post('user_contact'),
-            'user_password' => $this->input->post('user_password')
-        );
 
-        $result = $this->Api_model->insert_user('users',$data);
+            // Fetch input data
+            $user_name     = $this->input->post('user_name');
+            $user_email    = $this->input->post('user_email');
+            $user_contact  = $this->input->post('user_contact');
+            $user_password = $this->input->post('user_password');
 
-        if ($result >0) {
-            echo json_encode(array('status' => 'success', 'message' => 'User inserted successfully','user'=>$result));
-        } else {
-            echo json_encode(array('status' => 'error', 'message' => 'Failed to insert user'));
-        }
-        } elseif ($this->token_data() === false) {
+            // Check if user with the given email already exists
+            $is_user_exists = $this->Api_model->is_exists('users', array('user_email' => $user_email));
+
+            if ($is_user_exists) {
+                // User with the given email already exists
+                echo json_encode(array('status' => 'error', 'message' => 'This Email already exists.'));
+                return;
+            } else {
+                // Insert new user
+                $data = array(
+                    'user_name'     => $user_name,
+                    'user_email'    => $user_email,
+                    'user_contact'  => $user_contact,
+                    'user_password' => $user_password
+                );
+
+                $result = $this->Api_model->insert_user('users', $data);
+
+                if ($result > 0) {
+                    echo json_encode(array('status' => 'success', 'message' => 'User inserted successfully', 'user' => $result));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to insert user'));
+                }
+            }
+        } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -199,7 +218,7 @@ class Api extends CI_Controller {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to update user'));
             }
 
-        } elseif ($this->token_data() === false) {
+        } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -212,15 +231,23 @@ class Api extends CI_Controller {
         $token_data = $this->authUserToken([1]);
         if ($token_data) {
             //  delete logic here  
-            $where=array('user_id'=>$user_id);
-            $result = $this->Api_model->delete_user('users',$where);
-    
-            if ($result) {
-                echo json_encode(array('status' => 'success', 'message' => 'User deleted successfully'));
-            } else {
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
-            }
-        } elseif ($this->token_data() === false) {
+            $is_machine_exists = $this->Api_model->is_exists('users', array('user_id' => $user_id));
+            // Check if department name already exists
+            if ($is_machine_exists) {
+                // Machine with the given ID does not exist
+                echo json_encode(array('status' => 'error', 'message' => 'This Email  already exists.'));
+                return;
+              } else {
+                $where=array('user_id'=>$user_id);
+                $result = $this->Api_model->delete_user('users',$where);
+        
+                if ($result) {
+                    echo json_encode(array('status' => 'success', 'message' => 'User deleted successfully'));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
+                }
+            }    
+        } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -230,7 +257,6 @@ class Api extends CI_Controller {
     }
     
     
-   
     public function fetchAllDepartmentData()
     {
         $token_data = $this->authUserToken([1,2]);
@@ -242,7 +268,7 @@ class Api extends CI_Controller {
             } else {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
             }
-        } elseif ($this->token_data() === false) {
+        } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
@@ -251,7 +277,6 @@ class Api extends CI_Controller {
         }
     }
 
-   
 
 
     public function DepartmentInsert()
@@ -265,12 +290,13 @@ class Api extends CI_Controller {
             
             // Get department name from the input
             $department_name = $_POST['department_name'];
-            
+            $is_machine_exists = $this->Api_model->is_exists('department', array('department_name' => $department_name));
             // Check if department name already exists
-            if ($this->Api_model->is_department_exists($department_name)) {
-                // Department with the same name already exists
+            if ($is_machine_exists) {
+                // Machine with the given ID does not exist
                 echo json_encode(array('status' => 'error', 'message' => 'Department with the same name already exists.'));
-            } else {
+                return;
+              } else {
                 // Department with the same name does not exist, proceed with insertion
                 $data = array(
                     'department_name' => $department_name
@@ -283,7 +309,7 @@ class Api extends CI_Controller {
                     echo json_encode(array('status' => 'error', 'message' => 'Failed to insert department'));
                 }
             }
-        } elseif ($token_data === false) {
+        } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin  can insert departments'));
         } else {
@@ -292,17 +318,234 @@ class Api extends CI_Controller {
         }
     }
    
+
+    public function DepartmentUpdate($department_id) {
+        $token_data = $this->authUserToken([1]); // Assuming 1 represents admin role
+        if ($token_data) {
+            // Valid token
+            // Update logic
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            // Get department name from the input
+            $department_name = $_POST['department_name'];          
+            // Construct the where clause for the update
+            $where = array('department_id' => $department_id);
+            // Data to be updated
+            $data = array(
+                'department_name' => $department_name
+            );
+            // Perform the update operation
+            $result = $this->Api_model->update_user('department', $where, $data);
+
+            if ($result > 0) {
+                echo json_encode(array('status' => 'success', 'message' => 'Department updated successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to update department'));
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User is not authorized
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+
+
+    public function DepartmentDelete($department_id) {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            //  delete logic here 
+            $is_machine_exists = $this->Api_model->is_exists('department', array('department_id' => $department_id));
+
+            if (!$is_machine_exists) {
+                // Machine with the given ID does not exist
+                echo json_encode(array('status' => 'error', 'message' => 'department with the given ID does not exist'));
+                return;
+            } 
+            $where=array('department_id'=>$department_id);
+            $result = $this->Api_model->delete_user('department',$where);
     
+            if ($result) {
+                echo json_encode(array('status' => 'success', 'message' => 'User deleted successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+
+
+    public function fetchAllMachinesData()
+    {
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // all fetchAllData logic 
+            $data = $this->Api_model->fetch_all('machines','machine_id', 'ASC');
+            if ($data) {
+                echo json_encode(array('status'=>'success','data'=>$data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+
+
+    public function MachinesInsert()
+    {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Token is valid
+            
+            // Decode JSON input
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            // Get department name from the input
+            $machine_name = $_POST['machine_name'];
+            $is_machine_exists = $this->Api_model->is_exists('machines', array('machine_name' => $machine_name));
+
+            if ($is_machine_exists) {
+                // Machine with the given ID does not exist
+                echo json_encode(array('status' => 'error', 'message' => 'Department with the same name already exists.'));
+                return;
+            } else {
+                // Department with the same name does not exist, proceed with insertion
+                $data = array(
+                    'machine_name' => $machine_name
+                );
+                $result = $this->Api_model->insert_user('machines', $data);
     
+                if ($result) {
+                    echo json_encode(array('status' => 'success', 'message' => 'Department inserted successfully'));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to insert department'));
+                }
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin  can insert departments'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User not logged in'));
+        }
+    }
+   
+
+    public function MachinesUpdate($machine_id) {
+        $token_data = $this->authUserToken([1]); // Assuming 1 represents admin role
+        if ($token_data) {
+            // Valid token
+            // Update logic
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            // Get department name from the input
+            $machine_name = $_POST['machine_name'];          
+            // Construct the where clause for the update
+            $where = array('machine_id' => $machine_id);
+            // Data to be updated
+            $data = array(
+                'machine_name' => $machine_name
+            );
+            // Perform the update operation
+            $result = $this->Api_model->update_user('machines', $where, $data);
+
+            if ($result > 0) {
+                echo json_encode(array('status' => 'success', 'message' => 'Department updated successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to update department'));
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User is not authorized
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
 
 
 
+    public function MachinesDelete($machine_id) {
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Valid token
+            
+            // Check if the machine with the given ID exists
+            $is_machine_exists = $this->Api_model->is_exists('machines', array('machine_id' => $machine_id));
+
+            if (!$is_machine_exists) {
+                // Machine with the given ID does not exist
+                echo json_encode(array('status' => 'error', 'message' => 'Machine with the given ID does not exist'));
+                return;
+            }
+
+            // Delete the machine
+            $where = array('machine_id' => $machine_id);
+            $result = $this->Api_model->delete_user('machines', $where);
+
+            if ($result) {
+                echo json_encode(array('status' => 'success', 'message' => 'Machine deleted successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete machine'));
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not authorized
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
 
 
 
+    public function AssignInsert() {
+        $user = $this->authUserToken([1]);
+        if ($user) {
+            // Get data from the POST request
+            // print_r( $user);
+            // die;
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            // Get department name from the input
+            $user_id = $_POST['user_id'];
+            $machine_id = $_POST['machine_id'];
+            $data = array(
+                'user_id' => $user_id ,
+                'machine_id' => $machine_id,
+              'assigned_by' => $user['user_id']
+            );
 
+            // Call the model method to insert the assignment
+            $result = $this->Api_model->insert_user('assigns',$data);
 
+            // Check if insertion was successful
+            if ($result) {
+                // Return success response
+                echo json_encode(array('status' => 'success', 'message' => 'Assign added successfully'));
+            } else {
+                // Return error response
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to add assign'));
+            }
+        } elseif ($user === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        
+        } else {
+            // User not authorized
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
 
+    }
+   
 
     
 }
