@@ -506,47 +506,80 @@ class Api extends CI_Controller {
         }
     }
 
-
+    
+    public function fetchAllAssignData()
+    {
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // all fetchAllData logic 
+            $data = $this->Api_model->fetch_all('assigns','assign_id', 'ASC');
+            if ($data) {
+                echo json_encode(array('status'=>'success','data'=>$data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+            }
+        } elseif ($token_data === false) {            // Token is invalid
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+        }
+    }
+    
 
     public function AssignInsert() {
         $user = $this->authUserToken([1]);
         if ($user) {
             // Get data from the POST request
-            // print_r( $user);
-            // die;
             $_POST = json_decode(file_get_contents('php://input'), true);
-            // Get department name from the input
+            // Get user_id and machine_id from the input
             $user_id = $_POST['user_id'];
             $machine_id = $_POST['machine_id'];
-            $data = array(
-                'user_id' => $user_id ,
-                'machine_id' => $machine_id,
-              'assigned_by' => $user['user_id']
-            );
-
-            // Call the model method to insert the assignment
-            $result = $this->Api_model->insert_user('assigns',$data);
-
-            // Check if insertion was successful
-            if ($result) {
-                // Return success response
-                echo json_encode(array('status' => 'success', 'message' => 'Assign added successfully'));
+    
+            // Check if user_id exists
+            $is_user_exists = $this->Api_model->is_exists('users', array('user_id' => $user_id));
+    
+            // Check if machine_id exists
+            $is_machine_exists = $this->Api_model->is_exists('machines', array('machine_id' => $machine_id));
+    
+            // If both user_id and machine_id exist, proceed with insertion
+            if ($is_user_exists && $is_machine_exists) {
+                $data = array(
+                    'user_id' => $user_id,
+                    'machine_id' => $machine_id,
+                    'assigned_by' => $user['user_id']
+                );
+    
+                // Call the model method to insert the assignment
+                $result = $this->Api_model->insert_user('assigns',$data);
+    
+                // Check if insertion was successful
+                if ($result) {
+                    // Return success response
+                    echo json_encode(array('status' => 'success', 'message' => 'Assign added successfully'));
+                } else {
+                    // Return error response
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to add assign'));
+                }
+            } elseif (!$is_user_exists && !$is_machine_exists) {
+                // If both user_id and machine_id do not exist
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid user_id and machine_id'));
+            } elseif (!$is_user_exists) {
+                // If user_id does not exist
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid user_id'));
             } else {
-                // Return error response
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to add assign'));
+                // If machine_id does not exist
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid machine_id'));
             }
-        } elseif ($user === false) {            // Token is invalid
+        } elseif ($user === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
-        
         } else {
             // User not authorized
             echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
         }
-
     }
-   
-
     
 }
 
