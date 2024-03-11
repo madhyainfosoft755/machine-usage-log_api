@@ -92,7 +92,27 @@ class Api_model extends CI_Model {
     }
 
 
+    // public function fetch_with_pagination($table, $order_by_column, $order, $limit, $offset)
+    // {
+    //     $this->db->order_by($order_by_column, $order);
+    //     $this->db->limit($limit, $offset);
+    //     $query = $this->db->get($table);
+    //     return $query->result_array();
+    // }
 
+
+    public function fetch_with_pagination($table, $order_by_column, $order, $limit, $offset)
+    {
+        $this->db->select('assigns.*, users.user_name AS user_name, machines.machine_name AS machine_name');
+        $this->db->from($table);
+        $this->db->join('users', 'assigns.user_id = users.user_id', 'left');
+        $this->db->join('machines', 'assigns.machine_id = machines.machine_id', 'left');
+        $this->db->order_by($order_by_column, $order);
+        $this->db->limit($limit, $offset);
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+    
 
 
 }

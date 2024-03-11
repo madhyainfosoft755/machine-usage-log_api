@@ -506,28 +506,39 @@ class Api extends CI_Controller {
         }
     }
 
-    
-    public function fetchAllAssignData()
+
+    //url  http://localhost/machine-usage-log_api/index.php/api/fetchAllAssignData
+    public function fetchAllAssignData($page = 1, $records = 10)
     {
-        $token_data = $this->authUserToken([1,2]);
+        // Check if token is valid
+        $token_data = $this->authUserToken([1, 2]);
         if ($token_data) {
-            // all fetchAllData logic 
-            $data = $this->Api_model->fetch_all('assigns','assign_id', 'ASC');
-            if ($data) {
-                echo json_encode(array('status'=>'success','data'=>$data));
+            // Check if page number and records per page are provided in the URL
+            if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+                // Calculate the offset based on page number and records per page
+                $offset = ($page - 1) * $records;
+    
+                // Fetch data with pagination
+                $data = $this->Api_model->fetch_with_pagination('assigns', 'assign_id', 'ASC', $records, $offset);
+    
+                if ($data) {
+                    echo json_encode(array('status' => 'success', 'data' => $data));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+                }
             } else {
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
             }
-        } elseif ($token_data === false) {            // Token is invalid
+        } elseif ($token_data === false) {
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
             echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
         }
-    }
-    
+    }      
 
+      
     public function AssignInsert() {
         $user = $this->authUserToken([1]);
         if ($user) {
@@ -580,7 +591,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
         }
     }
-    
+
 }
 
   
