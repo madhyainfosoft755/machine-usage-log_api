@@ -92,13 +92,13 @@ class Api_model extends CI_Model {
     }
 
 
-    // public function fetch_with_pagination($table, $order_by_column, $order, $limit, $offset)
-    // {
-    //     $this->db->order_by($order_by_column, $order);
-    //     $this->db->limit($limit, $offset);
-    //     $query = $this->db->get($table);
-    //     return $query->result_array();
-    // }
+    public function fetch_with_paginations($table, $order_by_column, $order, $limit, $offset)
+    {
+        $this->db->order_by($order_by_column, $order);
+        $this->db->limit($limit, $offset);
+        $query = $this->db->get($table);
+        return $query->result_array();
+    }
 
 
     public function fetch_with_pagination($table, $order_by_column, $order, $limit, $offset)

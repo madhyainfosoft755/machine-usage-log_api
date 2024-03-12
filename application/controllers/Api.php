@@ -123,7 +123,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
     
@@ -143,7 +143,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -223,7 +223,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -252,7 +252,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
     
@@ -273,7 +273,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -314,7 +314,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin  can insert departments'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User not logged in'));
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
         }
     }
    
@@ -346,7 +346,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User is not authorized
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -366,16 +366,16 @@ class Api extends CI_Controller {
             $result = $this->Api_model->delete_user('department',$where);
     
             if ($result) {
-                echo json_encode(array('status' => 'success', 'message' => 'User deleted successfully'));
+                echo json_encode(array('status' => 'success', 'message' => 'Department deleted successfully'));
             } else {
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete user'));
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete Department'));
             }
         } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -396,7 +396,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -416,7 +416,7 @@ class Api extends CI_Controller {
 
             if ($is_machine_exists) {
                 // Machine with the given ID does not exist
-                echo json_encode(array('status' => 'error', 'message' => 'Department with the same name already exists.'));
+                echo json_encode(array('status' => 'error', 'message' => ' Machines with the same name already exists.'));
                 return;
             } else {
                 // Department with the same name does not exist, proceed with insertion
@@ -426,17 +426,17 @@ class Api extends CI_Controller {
                 $result = $this->Api_model->insert_user('machines', $data);
     
                 if ($result) {
-                    echo json_encode(array('status' => 'success', 'message' => 'Department inserted successfully'));
+                    echo json_encode(array('status' => 'success', 'message' => ' Machines inserted successfully'));
                 } else {
-                    echo json_encode(array('status' => 'error', 'message' => 'Failed to insert department'));
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to insert  data'));
                 }
             }
         } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
-            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin  can insert departments'));
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin  can insert data'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User not logged in'));
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
         }
     }
    
@@ -459,16 +459,16 @@ class Api extends CI_Controller {
             $result = $this->Api_model->update_user('machines', $where, $data);
 
             if ($result > 0) {
-                echo json_encode(array('status' => 'success', 'message' => 'Department updated successfully'));
+                echo json_encode(array('status' => 'success', 'message' => ' Machines updated successfully'));
             } else {
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to update department'));
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to update  data'));
             }
         } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User is not authorized
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -495,14 +495,14 @@ class Api extends CI_Controller {
             if ($result) {
                 echo json_encode(array('status' => 'success', 'message' => 'Machine deleted successfully'));
             } else {
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete machine'));
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to delete data'));
             }
         } elseif ($token_data === false) {            // Token is invalid
             // Token is invalid
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not authorized
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
@@ -534,7 +534,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not logged in
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }      
 
@@ -588,10 +588,90 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
         } else {
             // User not authorized
-            echo json_encode(array('status' => 'error', 'message' => 'User Unauthorized'));
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
 
+
+    public function Machine_logsInsert()
+    {
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // Token is valid
+            
+            // Decode JSON input
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            // Get data from the input
+            $data = array(
+                'date' => $_POST['date'],
+                'location' => $_POST['location'],
+                'format' => $_POST['format'],
+                'shift' => $_POST['shift'],
+                'machine' => $_POST['machine'],
+                'product' => $_POST['product'],
+                'batch' => $_POST['batch'],
+                'op_st_time' => $_POST['op_st_time'],
+                'op_ed_time' => $_POST['op_ed_time'],
+               'cl_st_time' => $_POST['cl_st_time'],
+               'cl_ed_time' => $_POST['cl_ed_time'],
+                'done_by' => $_POST['done_by'],
+                'check_by' => $_POST['check_by'],
+                'remarks' => $_POST['remarks']
+            );
+    
+            // Insert data into machine_logs table
+            $result = $this->Api_model->insert_user('machine_logs', $data);
+    
+            if ($result) {
+                echo json_encode(array('status' => 'success', 'message' => 'Data inserted successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to insert data'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin can insert data'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+    
+
+    public function fetchAllMachine_logsData($page = 1, $records = 10)
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Check if page number and records per page are provided in the URL
+            if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+                // Calculate the offset based on page number and records per page
+                $offset = ($page - 1) * $records;
+    
+                // Fetch data with pagination
+                $data = $this->Api_model->fetch_with_paginations('machine_logs', 'log_id', 'ASC', $records, $offset);
+    
+                if ($data) {
+                    echo json_encode(array('status' => 'success', 'data' => $data));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+                }
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
+        }
+    } 
+
+
+
+
+    
 }
 
   
