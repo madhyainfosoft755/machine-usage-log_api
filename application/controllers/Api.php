@@ -593,6 +593,7 @@ class Api extends CI_Controller {
     }
 
 
+
     public function Machine_logsInsert()
     {
         $token_data = $this->authUserToken([1,2]);
@@ -601,6 +602,9 @@ class Api extends CI_Controller {
             
             // Decode JSON input
             $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            // Get the user's ID from the token data
+            $user_id = $token_data['user_id'];
             
             // Get data from the input
             $data = array(
@@ -613,16 +617,16 @@ class Api extends CI_Controller {
                 'batch' => $_POST['batch'],
                 'op_st_time' => $_POST['op_st_time'],
                 'op_ed_time' => $_POST['op_ed_time'],
-               'cl_st_time' => $_POST['cl_st_time'],
-               'cl_ed_time' => $_POST['cl_ed_time'],
-                'done_by' => $_POST['done_by'],
+                'cl_st_time' => $_POST['cl_st_time'],
+                'cl_ed_time' => $_POST['cl_ed_time'],
+                'done_by' => $user_id, // Set done_by to the user's ID
                 'check_by' => $_POST['check_by'],
                 'remarks' => $_POST['remarks']
             );
-    
+
             // Insert data into machine_logs table
             $result = $this->Api_model->insert_user('machine_logs', $data);
-    
+
             if ($result) {
                 echo json_encode(array('status' => 'success', 'message' => 'Data inserted successfully'));
             } else {
@@ -636,6 +640,7 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
         }
     }
+
     
 
     public function fetchAllMachine_logsData($page = 1, $records = 10)
@@ -668,9 +673,49 @@ class Api extends CI_Controller {
         }
     } 
 
+    
 
+    public function fetchAllMachine_logsUser_Data($page = 1, $records = 10)
+    {
+        // Check if token is valid
+        $user = $this->authUserToken([1,2]);
+        if ($user) {
+            // Check if page number and records per page are provided in the URL
+            if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+                // Get the user ID of the user who inserted the data
+               
+                $user_id = $user['user_id'];
+                // Calculate the offset based on page number and records per page
+                $offset = ($page - 1) * $records;
+    
+                // If user is admin, fetch all logs
+                if ($user['role_id'] ==1) {
+                    $data = $this->Api_model->fetch_with_paginations('machine_logs', 'log_id', 'ASC', $records, $offset);
 
-
+                } else {
+                   
+                    // Fetch data with pagination based on user's ID
+                    $data = $this->Api_model->fetch_machine_logs_by_user_id('machine_logs', 'log_id', 'ASC', $records, $offset, $user_id);
+                }
+    
+                if ($data) {
+                    echo json_encode(array('status' => 'success', 'data' => $data));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'No data available'));
+                }
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
+            }
+        } elseif ($user === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+    
+   
     
 }
 
