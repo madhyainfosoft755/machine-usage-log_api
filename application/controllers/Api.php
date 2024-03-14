@@ -716,7 +716,7 @@ class Api extends CI_Controller {
     }
     
 
-    public function UserInsertFromExcel()
+    public function UserInsertExcelFileUpload()
     {
         // Check if the user is authenticated
         $token_data = $this->authUserToken([1]);
