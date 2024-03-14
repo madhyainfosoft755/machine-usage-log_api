@@ -409,7 +409,7 @@ class Api extends CI_Controller {
             
             // Decode JSON input
             $_POST = json_decode(file_get_contents('php://input'), true);
-            
+            $created_by = $token_data['user_id'];
             // Get department name from the input
             $machine_name = $_POST['machine_name'];
             $is_machine_exists = $this->Api_model->is_exists('machines', array('machine_name' => $machine_name));
@@ -421,7 +421,8 @@ class Api extends CI_Controller {
             } else {
                 // Department with the same name does not exist, proceed with insertion
                 $data = array(
-                    'machine_name' => $machine_name
+                    'machine_name' => $machine_name,
+                    'created_by' => $created_by
                 );
                 $result = $this->Api_model->insert_user('machines', $data);
     
@@ -803,6 +804,92 @@ class Api extends CI_Controller {
                 'created_at' => date('Y-m-d H:i:s')
             );
             $result = $this->Api_model->insert_user('users', $data);
+
+            if ($result > 0) {
+                $successCount++;
+            } else {
+                $errorCount++;
+            }
+        }
+
+        // Prepare and echo the response
+        if ($successCount > 0) {
+            echo json_encode(array('status' => 'success', 'message' => 'Data inserted successfully', 'success_count' => $successCount));
+        } else {
+            echo json_encode(array('status' => 'error', 'message' => 'Failed to insert data'));
+        }
+    }
+
+
+
+    public function MachineInsertExcelFileUpload()
+    {
+        // Check if the user is authenticated
+        $token_data = $this->authUserToken([1]);
+        if (!$token_data) {
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin can insert data'));
+            return;
+        }
+
+        // Check if a file is uploaded
+        if (empty($_FILES['machinefile']['name'])) {
+            echo json_encode(array('status' => 'error', 'message' => 'No file uploaded'));
+            return;
+        }
+
+        // File upload configuration
+        $config['upload_path'] = './machine_upload/';
+        $config['allowed_types'] = 'xlsx|xls';
+        $config['max_size'] = '2048'; // 2MB max file size
+
+        $this->load->library('upload', $config);
+
+        // Attempt file upload
+        if (!$this->upload->do_upload('machinefile')) {
+            $error = $this->upload->display_errors();
+            echo json_encode(array('status' => 'error', 'message' => 'Error uploading file: ' . $error));
+            return;
+        }
+        // Retrieve file data and path
+        $fileData = $this->upload->data();
+        $filePath = $fileData['full_path']; // Full path to the uploaded file
+
+        // Load required library for Excel processing
+        $this->load->library('excel');
+        $objPHPExcel = PHPExcel_IOFactory::load($filePath);
+        $worksheet = $objPHPExcel->getActiveSheet();
+        $highestRow = $worksheet->getHighestRow();
+        $successCount = 0;
+        $errorCount = 0;
+
+        // Iterate over each row in the Excel file
+        for ($row = 2; $row <= $highestRow; $row++) {
+            // Retrieve data from Excel file
+            $machine_name = $worksheet->getCellByColumnAndRow(0, $row)->getValue();
+            // $created_at = date('Y-m-d H:i:s');
+            $created_by = $token_data['user_id']; // Using user_id from the authentication token         
+
+            // Check if user with the given email already exists
+            $is_machine_exists = $this->Api_model->is_exists('machines', array('machine_name' => $machine_name));
+            if ($is_machine_exists) {
+                echo json_encode(array('status' => 'error', 'message' => 'This machine name already exists'));
+                $errorCount++;
+                continue;
+            }
+
+            // Check if required fields are provided
+            if (empty($machine_name)) {
+                echo json_encode(array('status' => 'error', 'message' => 'Machine name is required'));
+                $errorCount++;
+                continue;
+            }
+
+            // Insert data into the database
+            $data = array(
+                'machine_name' => $machine_name,
+                'created_by' => $created_by
+            );
+            $result = $this->Api_model->insert_user('machines', $data);
 
             if ($result > 0) {
                 $successCount++;
