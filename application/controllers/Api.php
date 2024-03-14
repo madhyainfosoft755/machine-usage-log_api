@@ -715,8 +715,111 @@ class Api extends CI_Controller {
         }
     }
     
-   
-    
+
+    public function UserInsertFromExcel()
+    {
+        // Check if the user is authenticated
+        $token_data = $this->authUserToken([1]);
+        if (!$token_data) {
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token OR Only admin can insert data'));
+            return;
+        }
+
+        // Check if a file is uploaded
+        if (empty($_FILES['userfile']['name'])) {
+            echo json_encode(array('status' => 'error', 'message' => 'No file uploaded'));
+            return;
+        }
+
+        // File upload configuration
+        $config['upload_path'] = './uploads/';
+        $config['allowed_types'] = 'xlsx|xls';
+        $config['max_size'] = '2048'; // 2MB max file size
+
+        $this->load->library('upload', $config);
+
+        // Attempt file upload
+        if (!$this->upload->do_upload('userfile')) {
+            $error = $this->upload->display_errors();
+            echo json_encode(array('status' => 'error', 'message' => 'Error uploading file: ' . $error));
+            return;
+        }
+
+        // Retrieve file data and path
+        $fileData = $this->upload->data();
+        $filePath = $fileData['full_path']; // Full path to the uploaded file
+
+        // Load required library for Excel processing
+        $this->load->library('excel');
+        $objPHPExcel = PHPExcel_IOFactory::load($filePath);
+        $worksheet = $objPHPExcel->getActiveSheet();
+        $highestRow = $worksheet->getHighestRow();
+        $successCount = 0;
+        $errorCount = 0;
+
+        // Iterate over each row in the Excel file
+        for ($row = 2; $row <= $highestRow; $row++) {
+            // Retrieve data from Excel file
+            $user_name = $worksheet->getCellByColumnAndRow(0, $row)->getValue();
+            $user_email = $worksheet->getCellByColumnAndRow(1, $row)->getValue();
+            $user_contact = $worksheet->getCellByColumnAndRow(2, $row)->getValue();
+            $user_password = $worksheet->getCellByColumnAndRow(3, $row)->getValue();
+            $role_id = $worksheet->getCellByColumnAndRow(4, $row)->getValue() ?? 2;
+
+            // Check if user with the given email already exists
+            $is_email_exists = $this->Api_model->is_exists('users', array('user_email' => $user_email));
+            if ($is_email_exists) {
+                echo json_encode(array('status' => 'error', 'message' => 'User with this email already exists'));
+                $errorCount++;
+                continue;
+            }
+            // Check if contact number is null and append to error message
+            if (empty($user_contact)) {
+                $errorMessage = "Contact number cannot be empty for user: $user_name, email: $user_email";
+                echo json_encode(array('status' => 'error', 'message' => $errorMessage));
+                $errorCount++;
+                continue;
+            }
+
+            // Check if required fields are provided
+            if (empty($user_name) || empty($user_email) || empty($user_password)) {
+                echo json_encode(array('status' => 'error', 'message' => 'User name, email, and password are required'));
+                $errorCount++;
+                continue;
+            }
+
+            // Check if user_contact is empty, set to null if empty
+            if (empty($user_contact)) {
+                $user_contact = null;
+            }
+
+            // Insert data into the database
+            $data = array(
+                'user_name' => $user_name,
+                'user_email' => $user_email,
+                'user_contact' => $user_contact,
+                'user_password' => $user_password,
+                'role_id' => $role_id,
+                'created_at' => date('Y-m-d H:i:s')
+            );
+            $result = $this->Api_model->insert_user('users', $data);
+
+            if ($result > 0) {
+                $successCount++;
+            } else {
+                $errorCount++;
+            }
+        }
+
+        // Prepare and echo the response
+        if ($successCount > 0) {
+            echo json_encode(array('status' => 'success', 'message' => 'Data inserted successfully', 'success_count' => $successCount));
+        } else {
+            echo json_encode(array('status' => 'error', 'message' => 'Failed to insert data'));
+        }
+    }
+
+
 }
 
   
