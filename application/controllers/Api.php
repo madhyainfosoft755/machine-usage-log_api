@@ -1023,11 +1023,122 @@ class Api extends CI_Controller {
     }
 
 
+    public function Maintenance_logsInsert()
+    {
+        $token_data = $this->authUserToken([1,2]);
+        // Token is valid  
+        if ($token_data) {                    
+            // Decode JSON input
+            $_POST = json_decode(file_get_contents('php://input'), true); 
 
+            // Get data from the input
+            $data = array(
+                'date' => $_POST['date'],
+                'location' => $_POST['location'],
+                'format' => $_POST['format'],
+                'shift' => $_POST['shift'],
+                'machine' => $_POST['machine'],
+                'product' => $_POST['product'],
+                'batch' => $_POST['batch'],
+                'm_st_time' => $_POST['m_st_time'],
+                'm_ed_time' => $_POST['m_ed_time'],
+                'done_by' =>  $_POST['done_by'], // Set done_by to the user's ID
+                'check_by' => $_POST['check_by'],
+                'remarks' => $_POST['remarks']
+            );
 
+            // Insert data into machine_logs table
+            $result = $this->Api_model->insert_user('maintenance_logs', $data);
 
+            if ($result) {
+                echo json_encode(array('status' => 'success', 'message' => 'Data inserted successfully'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to insert data'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
 
+    public function fetchAllMaintenance_logsData($page = 1, $records = 10)
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Check if page number and records per page are provided in the URL
+            if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+                // Calculate the offset based on page number and records per page
+                $offset = ($page - 1) * $records;
     
+                // Fetch data with pagination
+                $data = $this->Api_model->fetch_with_paginations('maintenance_logs', 'maintenance_id', 'ASC', $records, $offset);
+    
+                if ($data) {
+                    echo json_encode(array('status' => 'success', 'data' => $data));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+                }
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
+        }
+    } 
+
+    public function fetchAllMaintenance_logsUser_Data($page = 1, $records = 10)
+    {
+        // Check if token is valid
+        $user = $this->authUserToken([1,2]);
+        if ($user) {
+            // Check if page number and records per page are provided in the URL
+            if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+                // Get the user ID of the user who inserted the data
+               
+                $user_id = $user['user_id'];
+                // Calculate the offset based on page number and records per page
+                $offset = ($page - 1) * $records;
+    
+                // If user is admin, fetch all logs
+                if ($user['role_id'] ==1) {
+                    $data = $this->Api_model->fetch_with_paginations('maintenance_logs', 'maintenance_id', 'ASC', $records, $offset);
+
+                } else {
+                   
+                    // Fetch data with pagination based on user's ID
+                    $data = $this->Api_model->fetch_logs_check_by_user_id('maintenance_logs', 'maintenance_id', 'ASC', $records, $offset, $user_id);
+                }
+    
+                if ($data) {
+                    echo json_encode(array('status' => 'success', 'data' => $data));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'No data available'));
+                }
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
+            }
+        } elseif ($user === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
+   
+    
+  
+    
+
 }
 
   

@@ -110,6 +110,15 @@ class Api_model extends CI_Model {
         return $query->result_array();
     }
 
+    public function fetch_logs_check_by_user_id($table, $order_by_column, $order, $limit, $offset, $done_by_id)
+    {
+        $this->db->where('check_by', $done_by_id);
+        $this->db->order_by($order_by_column, $order);
+        $this->db->limit($limit, $offset);
+        $query = $this->db->get($table);
+        return $query->result_array();
+    }
+
    
 
 
