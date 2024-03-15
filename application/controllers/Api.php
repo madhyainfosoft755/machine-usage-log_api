@@ -595,7 +595,7 @@ class Api extends CI_Controller {
 
 
 
-    public function Machine_logsInsert()
+    public function Usage_logsInsert()
     {
         $token_data = $this->authUserToken([1,2]);
         if ($token_data) {
@@ -618,15 +618,13 @@ class Api extends CI_Controller {
                 'batch' => $_POST['batch'],
                 'op_st_time' => $_POST['op_st_time'],
                 'op_ed_time' => $_POST['op_ed_time'],
-               'cl_st_time' => $_POST['cl_st_time'],
-               'cl_ed_time' => $_POST['cl_ed_time'],
                 'done_by' => $user_id, // Set done_by to the user's ID
                 'check_by' => $_POST['check_by'],
                 'remarks' => $_POST['remarks']
             );
 
-            // Insert data into machine_logs table
-            $result = $this->Api_model->insert_user('machine_logs', $data);
+            // Insert data into usage_logs table
+            $result = $this->Api_model->insert_user('usage_logs', $data);
 
             if ($result) {
                 echo json_encode(array('status' => 'success', 'message' => 'Data inserted successfully'));
@@ -644,7 +642,7 @@ class Api extends CI_Controller {
 
     
 
-    public function fetchAllMachine_logsData($page = 1, $records = 10)
+    public function fetchAllUsage_logsData($page = 1, $records = 10)
     {
         // Check if token is valid
         $token_data = $this->authUserToken([1]);
@@ -655,7 +653,7 @@ class Api extends CI_Controller {
                 $offset = ($page - 1) * $records;
     
                 // Fetch data with pagination
-                $data = $this->Api_model->fetch_with_paginations('machine_logs', 'log_id', 'ASC', $records, $offset);
+                $data = $this->Api_model->fetch_with_paginations('usage_logs', 'log_id', 'ASC', $records, $offset);
     
                 if ($data) {
                     echo json_encode(array('status' => 'success', 'data' => $data));
@@ -676,7 +674,7 @@ class Api extends CI_Controller {
 
     
 
-    public function fetchAllMachine_logsUser_Data($page = 1, $records = 10)
+    public function fetchAllUsage_logsUser_Data($page = 1, $records = 10)
     {
         // Check if token is valid
         $user = $this->authUserToken([1,2]);
@@ -691,12 +689,12 @@ class Api extends CI_Controller {
     
                 // If user is admin, fetch all logs
                 if ($user['role_id'] ==1) {
-                    $data = $this->Api_model->fetch_with_paginations('machine_logs', 'log_id', 'ASC', $records, $offset);
+                    $data = $this->Api_model->fetch_with_paginations('usage_logs', 'log_id', 'ASC', $records, $offset);
 
                 } else {
                    
                     // Fetch data with pagination based on user's ID
-                    $data = $this->Api_model->fetch_logs_by_user_id('machine_logs', 'log_id', 'ASC', $records, $offset, $user_id);
+                    $data = $this->Api_model->fetch_logs_by_user_id('usage_logs', 'log_id', 'ASC', $records, $offset, $user_id);
                 }
     
                 if ($data) {
@@ -935,7 +933,7 @@ class Api extends CI_Controller {
                 'remarks' => $_POST['remarks']
             );
 
-            // Insert data into machine_logs table 
+            // Insert data 
             $result = $this->Api_model->insert_user('cleaning_logs', $data);
 
             if ($result) {
@@ -1042,12 +1040,12 @@ class Api extends CI_Controller {
                 'batch' => $_POST['batch'],
                 'm_st_time' => $_POST['m_st_time'],
                 'm_ed_time' => $_POST['m_ed_time'],
-                'done_by' =>  $_POST['done_by'], // Set done_by to the user's ID 
+                'done_by' =>  $_POST['done_by'], 
                 'check_by' => $_POST['check_by'],
                 'remarks' => $_POST['remarks']
             );
 
-            // Insert data into machine_logs table 
+            // Insert data 
             $result = $this->Api_model->insert_user('maintenance_logs', $data);
 
             if ($result) {
