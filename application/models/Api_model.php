@@ -101,7 +101,7 @@ class Api_model extends CI_Model {
     }
 
 
-    public function fetch_machine_logs_by_user_id($table, $order_by_column, $order, $limit, $offset, $done_by_id)
+    public function fetch_logs_by_user_id($table, $order_by_column, $order, $limit, $offset, $done_by_id)
     {
         $this->db->where('done_by', $done_by_id);
         $this->db->order_by($order_by_column, $order);
