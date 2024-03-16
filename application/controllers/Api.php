@@ -1243,8 +1243,90 @@ class Api extends CI_Controller {
         }
     }
     
-  
+    public function fetchNew_Breakdown_logsData()
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // Fetch only the newly inserted breakdown logs
+            $data = $this->Api_model->fetchNewBreakdownLogs('breakdown_logs',  'breakdown_id');
+            if ($data) {
+                echo json_encode(array('status' => 'success', 'data' => $data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'No new data found'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
     
+    public function fetchNew_Cleaning_logsData()
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // Fetch only the newly inserted breakdown logs
+            $data = $this->Api_model->fetchNewBreakdownLogs('cleaning_logs',  'cleaning_id');
+            if ($data) {
+                echo json_encode(array('status' => 'success', 'data' => $data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'No new data found'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
+    public function fetchNew_Maintenance_logsData()
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // Fetch only the newly inserted breakdown logs
+            $data = $this->Api_model->fetchNewBreakdownLogs('maintenance_logs',  'maintenance_id');
+            if ($data) {
+                echo json_encode(array('status' => 'success', 'data' => $data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'No new data found'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
+    public function fetchNew_Usage_logsData()
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1,2]);
+        if ($token_data) {
+            // Fetch only the newly inserted breakdown logs
+            $data = $this->Api_model->fetchNewBreakdownLogs('usage_logs',  'log_id');
+            if ($data) {
+                echo json_encode(array('status' => 'success', 'data' => $data));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'No new data found'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
 
 }
 

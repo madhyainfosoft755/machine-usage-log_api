@@ -136,6 +136,43 @@ class Api_model extends CI_Model {
     
 
     
+    public function fetchByColumn($table, $column, $value)
+    {
+        $this->db->select('*');
+        $this->db->from($table);
+        $this->db->where($column, $value);
+        $query = $this->db->get();
+
+        if ($query->num_rows() > 0) {
+            $row = $query->row();
+            return $row;
+        } else {
+            return false;
+        }
+    }
+
+
+    public function fetchNewBreakdownLogs($table, $id_column)
+    {
+        $this->db->select('*');
+        $this->db->from($table);
+        $this->db->order_by($id_column, 'DESC'); // Assuming breakdown_id is auto-incremented
+        $this->db->limit(1); // Fetch only the latest entry
+        $query = $this->db->get();
+    
+        if ($query->num_rows() > 0) {
+            return $query->row(); // Return only one row as it's the latest entry
+        } else {
+            return false;
+        }
+    }
+    
+
+
+
+
+
+
 
 
 }
