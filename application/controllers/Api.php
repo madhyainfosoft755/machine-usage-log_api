@@ -147,8 +147,6 @@ class Api extends CI_Controller {
         }
     }
 
-   
-
 
 
     public function UserInsert()
@@ -1326,6 +1324,117 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
         }
     }
+
+
+    // public function fetch_All_logs_Data($page = 1, $records = 10)
+    // {
+    //     // Check if token is valid
+    //     $token_data = $this->authUserToken([1]);
+    //     if ($token_data) {
+    //         // Check if page number and records per page are provided in the URL
+    //         if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+    //             // Calculate the offset based on page number and records per page
+    //             $offset = ($page - 1) * $records;
+    
+    //             // Fetch data from breakdown_logs table
+    //             $breakdown_logs = $this->Api_model->fetch_with_paginations('breakdown_logs', 'created_at', 'ASC', $records, $offset);
+    
+    //             // Fetch data from cleaning_logs table
+    //             $cleaning_logs = $this->Api_model->fetch_with_paginations('cleaning_logs', 'created_at', 'ASC', $records, $offset);
+    
+    //             // Fetch data from maintenance_logs table
+    //             $maintenance_logs = $this->Api_model->fetch_with_paginations('maintenance_logs', 'created_at', 'ASC', $records, $offset);
+    
+    //             // Fetch data from usage_logs table
+    //             $usage_logs = $this->Api_model->fetch_with_paginations('usage_logs', 'created_at', 'ASC', $records, $offset);
+    
+    //             // Merge and sort the results from all tables
+    //             $data = array_merge($breakdown_logs, $cleaning_logs, $maintenance_logs, $usage_logs);
+    //             usort($data, function($a, $b) {
+    //                 return strtotime($a['created_at']) - strtotime($b['created_at']);
+    //             });
+    
+    //             if ($data) {
+    //                 echo json_encode(array('status' => 'success', 'data' => $data));
+    //             } else {
+    //                 echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+    //             }
+    //         } else {
+    //             echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
+    //         }
+    //     } elseif ($token_data === false) {
+    //         // Token is invalid
+    //         echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+    //     } else {
+    //         // User not logged in
+    //         echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
+    //     }
+    // }
+    
+   
+
+    public function fetch_All_logs_Data($page = 1, $records = 10)
+    {
+        // Check if token is valid
+        $token_data = $this->authUserToken([1]);
+        if ($token_data) {
+            // Check if page number and records per page are provided in the URL
+            if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
+                // Calculate the offset based on page number and records per page
+                $offset = ($page - 1) * $records;
+
+                // Fetch data from breakdown_logs table
+                $breakdown_logs = $this->Api_model->fetch_with_paginations('breakdown_logs', 'created_at', 'ASC', $records, $offset);
+                $breakdown_logs = $this->renameTimeColumns($breakdown_logs, 'break');
+
+                // Fetch data from cleaning_logs table
+                $cleaning_logs = $this->Api_model->fetch_with_paginations('cleaning_logs', 'created_at', 'ASC', $records, $offset);
+                $cleaning_logs = $this->renameTimeColumns($cleaning_logs, 'cl');
+
+                // Fetch data from maintenance_logs table
+                $maintenance_logs = $this->Api_model->fetch_with_paginations('maintenance_logs', 'created_at', 'ASC', $records, $offset);
+                $maintenance_logs = $this->renameTimeColumns($maintenance_logs, 'm');
+
+                // Fetch data from usage_logs table
+                $usage_logs = $this->Api_model->fetch_with_paginations('usage_logs', 'created_at', 'ASC', $records, $offset);
+                $usage_logs = $this->renameTimeColumns($usage_logs, 'op');
+
+                // Merge and sort the results from all tables
+                $data = array_merge($breakdown_logs, $cleaning_logs, $maintenance_logs, $usage_logs);
+                usort($data, function($a, $b) {
+                    return strtotime($a['created_at']) - strtotime($b['created_at']);
+                });
+
+                if ($data) {
+                    echo json_encode(array('status' => 'success', 'data' => $data));
+                } else {
+                    echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
+                }
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
+            }
+        } elseif ($token_data === false) {
+            // Token is invalid
+            echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
+        }
+    }
+
+    private function renameTimeColumns($logs, $prefix)
+    {
+        foreach ($logs as &$log) {
+            $log['st_time'] = $log[$prefix.'_st_time'];
+            $log['ed_time'] = $log[$prefix.'_ed_time'];
+            unset($log[$prefix.'_st_time']);
+            unset($log[$prefix.'_ed_time']);
+        }
+        return $logs;
+    }
+
+
+    
 
 
 }
