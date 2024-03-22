@@ -69,6 +69,7 @@ class Api extends CI_Controller {
         }
     } 
 
+    
     public function Userlogin() {
         $jwt = new JWT();
         $jwtSecretkey = "myloginSecret";
@@ -76,29 +77,43 @@ class Api extends CI_Controller {
         $email = $this->input->post('user_email');
         $password = $this->input->post('user_password');
     
-        $user = $this->Api_model->CheckCredential($email,$password);
+        $user = $this->Api_model->CheckCredential($email, $password);
     
         if ($user) {
-            date_default_timezone_set('Asia/Kolkata');
-            $date = date('Y-m-d H:i:s', time());
+            // Check if the user is active
+            if ($user['is_active'] == 1) {
+                date_default_timezone_set('Asia/Kolkata');
+                $date = date('Y-m-d H:i:s', time());
     
-            $result_t = array();
-            $result_t['sub'] = $user['user_email'];
-            $result_t['exp'] = time() + 172800; //172800;
-            $token = $jwt->encode($result_t, $jwtSecretkey, 'HS256');
-
-            $data = array(
-                'user_name' => $user['user_name'],
-                'role' => $user['role']
-            );
+                $result_t = array();
+                $result_t['sub'] = $user['user_email'];
+                $result_t['exp'] = time() + 172800; //172800;
+                $token = $jwt->encode($result_t, $jwtSecretkey, 'HS256');
     
-            $res = array(
-                'status' => 'success',
-                'token' => $token,
-                'user' => $data,
-            );
-            echo json_encode($res);
+                // Check if the user is admin or superadmin
+                $role = ($user['is_admin'] == 1) ? 'admin' : (($user['is_superadmin'] == 1) ? 'superadmin' : 'user');
+    
+                $data = array(
+                    'user_name' => $user['user_name'],
+                    'role' => $role
+                );
+    
+                $res = array(
+                    'status' => 'success',
+                    'token' => $token,
+                    'user' => $data,
+                );
+                echo json_encode($res);
+            } else {
+                // User is inactive, send error message
+                $res = array(
+                    'status' => 'error',
+                    'message' => 'You are not active so cannot log in.',
+                );
+                echo json_encode($res);
+            }
         } else {
+            // Invalid credentials
             $res = array(
                 'status' => 'error',
                 'message' => 'Invalid Credentials!',
@@ -106,6 +121,51 @@ class Api extends CI_Controller {
             echo json_encode($res);
         }
     }
+    
+    
+    public function active($user_id) {
+        // Check user's role to ensure authorization
+        $tokendata = $this->authUserToken(['admin', 'superadmin']);
+        if (!$tokendata) {
+            // Activate the user with $user_id
+            $where= array('is_active' => 1);
+            $this->Api_model->is_active(array('user_id'=>$user_id),'users', $where);
+    
+            $res = array(
+                'status' => 'success',
+                'message' => ' Active successfully!',
+            );
+        } else {
+            $res = array(
+                'status' => 'error',
+                'message' => 'Unauthorized access!',
+            );
+        }
+        echo json_encode($res);
+    }
+
+    
+    public function deactive($user_id) {
+        // Check user's role to ensure authorization
+        $tokendata = $this->authUserToken(['admin', 'superadmin']);
+        if (!$tokendata) {
+            // Deactivate the user with $user_id
+            $where= array('is_active' => 0);
+            $this->Api_model->is_active(array('user_id'=>$user_id),'users', $where);
+    
+            $res = array(
+                'status' => 'success',
+                'message' => ' Deactive successfully!',
+            );
+        } else {
+            $res = array(
+                'status' => 'error',
+                'message' => 'Unauthorized access!',
+            );
+        }
+        echo json_encode($res);
+    }
+    
 
     public function getUserProfile()
     {
@@ -274,8 +334,6 @@ class Api extends CI_Controller {
             echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
         }
     }
-
-
 
     public function DepartmentInsert()
     {
@@ -1325,53 +1383,6 @@ class Api extends CI_Controller {
         }
     }
 
-
-    // public function fetch_All_logs_Data($page = 1, $records = 10)
-    // {
-    //     // Check if token is valid
-    //     $token_data = $this->authUserToken([1]);
-    //     if ($token_data) {
-    //         // Check if page number and records per page are provided in the URL
-    //         if (is_numeric($page) && $page > 0 && is_numeric($records) && $records > 0) {
-    //             // Calculate the offset based on page number and records per page
-    //             $offset = ($page - 1) * $records;
-    
-    //             // Fetch data from breakdown_logs table
-    //             $breakdown_logs = $this->Api_model->fetch_with_paginations('breakdown_logs', 'created_at', 'ASC', $records, $offset);
-    
-    //             // Fetch data from cleaning_logs table
-    //             $cleaning_logs = $this->Api_model->fetch_with_paginations('cleaning_logs', 'created_at', 'ASC', $records, $offset);
-    
-    //             // Fetch data from maintenance_logs table
-    //             $maintenance_logs = $this->Api_model->fetch_with_paginations('maintenance_logs', 'created_at', 'ASC', $records, $offset);
-    
-    //             // Fetch data from usage_logs table
-    //             $usage_logs = $this->Api_model->fetch_with_paginations('usage_logs', 'created_at', 'ASC', $records, $offset);
-    
-    //             // Merge and sort the results from all tables
-    //             $data = array_merge($breakdown_logs, $cleaning_logs, $maintenance_logs, $usage_logs);
-    //             usort($data, function($a, $b) {
-    //                 return strtotime($a['created_at']) - strtotime($b['created_at']);
-    //             });
-    
-    //             if ($data) {
-    //                 echo json_encode(array('status' => 'success', 'data' => $data));
-    //             } else {
-    //                 echo json_encode(array('status' => 'error', 'message' => 'Failed to fetch data'));
-    //             }
-    //         } else {
-    //             echo json_encode(array('status' => 'error', 'message' => 'Invalid page number or records per page'));
-    //         }
-    //     } elseif ($token_data === false) {
-    //         // Token is invalid
-    //         echo json_encode(array('status' => 'error', 'message' => 'Invalid Token'));
-    //     } else {
-    //         // User not logged in
-    //         echo json_encode(array('status' => 'error', 'message' => ' Unauthorized'));
-    //     }
-    // }
-    
-   
 
     public function fetch_All_logs_Data($page = 1, $records = 10)
     {

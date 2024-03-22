@@ -70,8 +70,6 @@ class Api_model extends CI_Model {
     }
     
 
-
-
     public function getUserProfile($table,$user_email)
     {
         $this->db->select('*');
@@ -82,7 +80,15 @@ class Api_model extends CI_Model {
         return $query->result_array()[0];
     }
 
+  
 
+    public function is_active($user_id,$table,$where) {
+        $this->db->where($user_id);
+        $this->db->update($table,$where);
+    }
+    
+   
+    
 
     public function is_exists($table, $where) {
         // Check if a record exists in the specified table based on the given condition
