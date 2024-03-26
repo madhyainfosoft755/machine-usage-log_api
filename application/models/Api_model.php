@@ -174,7 +174,18 @@ class Api_model extends CI_Model {
     }
     
 
+    public function get_where($table, $where, $fields="*"){
+        $this->db->select($fields);
+        $this->db->from($table);
+        $this->db->where($where);
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 
+    public function raw_query_arr($stmt){
+        $query = $this->db->query($stmt);
+        return $query->result_array();
+    }
 
 
 

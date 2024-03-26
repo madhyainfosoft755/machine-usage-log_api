@@ -51,11 +51,19 @@ class Api extends CI_Controller {
                 // print_r($res);
                 $role = $res['role_id'];
                 // if role of user is exist in $role arrya ten return false else data
-                if (in_array($role, $roleArr)) {
+                if ($res['is_active']==1){
+                    // active this if roles defined for user in future
+                    // if (in_array($role, $roleArr)) {
+                    //     return $res;
+                    // } else {
+                    //     //role is not matched means not autheticated for this action
+                    //     // echo "false";
+                    //     return false;
+                    // }
+
                     return $res;
-                } else {
-                    //role is not matched means not autheticated for this action
-                    // echo "false";
+                } else{
+                    // user is inactive
                     return false;
                 }
                 
@@ -67,59 +75,50 @@ class Api extends CI_Controller {
             //if auth key not in header then return
             return false;
         }
-    } 
+    }
 
     
     public function Userlogin() {
         $jwt = new JWT();
         $jwtSecretkey = "myloginSecret";
-    
         $email = $this->input->post('user_email');
         $password = $this->input->post('user_password');
+        $where = array( 'user_email'=> $email );
+        $users = $this->Api_model->get_where('users', $where);
     
-        $user = $this->Api_model->CheckCredential($email, $password);
-    
-        if ($user) {
-            // Check if the user is active
-            if ($user['is_active'] == 1) {
-                date_default_timezone_set('Asia/Kolkata');
-                $date = date('Y-m-d H:i:s', time());
-    
-                $result_t = array();
-                $result_t['sub'] = $user['user_email'];
-                $result_t['exp'] = time() + 172800; //172800;
-                $token = $jwt->encode($result_t, $jwtSecretkey, 'HS256');
-    
-                // Check if the user is admin or superadmin
-                $role = ($user['is_admin'] == 1) ? 'admin' : (($user['is_superadmin'] == 1) ? 'superadmin' : 'user');
-    
-                $data = array(
-                    'user_name' => $user['user_name'],
-                    'role' => $role
-                );
-    
-                $res = array(
-                    'status' => 'success',
-                    'token' => $token,
-                    'user' => $data,
-                );
-                echo json_encode($res);
-            } else {
-                // User is inactive, send error message
-                $res = array(
-                    'status' => 'error',
-                    'message' => 'You are not active so cannot log in.',
-                );
-                echo json_encode($res);
-            }
-        } else {
-            // Invalid credentials
-            $res = array(
-                'status' => 'error',
-                'message' => 'Invalid Credentials!',
-            );
-            echo json_encode($res);
-        }
+        if ($users) {
+            $user = $users[0];
+            if($user['user_password'] == $password){
+                if($user['is_active'] == 1){
+
+                    date_default_timezone_set('Asia/Kolkata');
+                    $date = date('Y-m-d H:i:s', time());
+            
+                    $result_t = array();
+                    $result_t['sub'] = $user['user_email'];
+                    $result_t['exp'] = time() + 172800; //172800;
+                    $token = $jwt->encode($result_t, $jwtSecretkey, 'HS256');
+                    if($user['is_superadmin']==1){ $role = 'superadmin'; }
+                    else if($user['is_admin']==1){ $role = 'admin'; }
+                    else{ $role = 'user'; }
+                    // If in future categorization added for user then we will send role as user plus one more key value pair,
+                    // "type" and value the categorization of user, like manager of others
+        
+                    $data = array(
+                        'user_name' => $user['user_name'],
+                        'role' => $role
+                    );
+            
+                    $res = array(
+                        'status' => 'success',
+                        'token' => $token,
+                        'user' => $data,
+                    );
+
+                } else { $res = array( 'status' => 'error', 'message' => 'Inactive User!', ); }
+            } else { $res = array( 'status' => 'error', 'message' => 'Invalid Credentials!', ); }
+        } else { $res = array( 'status' => 'error', 'message' => 'Invalid Credentials!', ); }
+        echo json_encode($res);
     }
     
     
@@ -1445,7 +1444,162 @@ class Api extends CI_Controller {
     }
 
 
+    private function _month_num_fix($month){
+        // " to convert single month digit into two digit, if month number less then 10 then it append 0 in the start else return the 
+        // number as it is "
+        if (strlen($month) == 1) {
+            return '0' . $month;
+        } else {
+            return $month;
+        }
+    }
+
+    public function usage_log_for_machine()
+    {
+        // Check if token is valid
+        $user = $this->authUserToken([1,2]);
+        if ($user && ($user['is_admin']==1 || $user['is_super_admin']==1) ) {
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            $year = $_POST['year'];
+            $month = $this->_month_num_fix($_POST['month']);
+            $machine_id = $_POST['machine_id'];
+            $start_end_both = $_POST['start_end_both'];
+
+            if ($start_end_both == 'start' || $start_end_both == 'end' || $start_end_both == 'both'){
+
+                if($start_end_both == 'start'){
+                    $addon_query = " op_st_time LIKE '{$year}-{$month}%' ";
+                } else if($start_end_both == 'end'){
+                    $addon_query = " op_ed_time LIKE '{$year}-{$month}%' ";
+                } else{
+                    $addon_query = " op_st_time LIKE '{$year}-{$month}%' AND op_ed_time LIKE '{$year}-{$month}%'";
+                }
     
+                $query = " SELECT DATE(ul.date) as usage_data, ul.shift, product, batch, op_st_time, op_ed_time, OpDoneBy.user_name as operation_done_by, 
+                    OpCheckBy.user_name as operation_check_by, ul.remarks as operation_remark FROM `usage_logs` ul 
+                    LEFT JOIN users OpDoneBy on OpDoneBy.user_id = ul.done_by 
+                    LEFT JOIN users OpCheckBy on OpCheckBy.user_id = ul.check_by 
+                    INNER JOIN machines m on m.machine_id = ul.machine
+                    WHERE ul.machine = {$machine_id} AND {$addon_query} ";
+                $data = $this->Api_model->raw_query_arr($query);
+                echo json_encode(array('status' => 'success', 'message'=>'ok', 'data'=>$data));
+            } else { echo json_encode(array('status' => 'error', 'message' => "value for key 'start_end_both' should be 'start', 'end' or 'both'!")); }
+
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
+    public function usage_log_for_month()
+    {
+        // Check if token is valid
+        $user = $this->authUserToken([1,2]);
+        if ($user && ($user['is_admin']==1 || $user['is_super_admin']==1) ) {
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            $year = $_POST['year'];
+            $month = $this->_month_num_fix($_POST['month']);
+            $start_end_both = $_POST['start_end_both'];
+            if ($start_end_both == 'start' || $start_end_both == 'end' || $start_end_both == 'both'){
+
+                if($start_end_both == 'start'){
+                    $addon_query = " op_st_time LIKE '{$year}-{$month}%' ";
+                } else if($start_end_both == 'end'){
+                    $addon_query = " op_ed_time LIKE '{$year}-{$month}%' ";
+                } else{
+                    $addon_query = " op_st_time LIKE '{$year}-{$month}%' AND op_ed_time LIKE '{$year}-{$month}%'";
+                }
+    
+                $query = "SELECT DATE(ul.date) as usage_data, ul.shift, m.machine_name as machine_name, product, batch, op_st_time, op_ed_time, OpDoneBy.user_name as operation_done_by, 
+                    OpCheckBy.user_name as operation_check_by, ul.remarks as operation_remark FROM `usage_logs` ul 
+                    LEFT JOIN users OpDoneBy on OpDoneBy.user_id = ul.done_by 
+                    LEFT JOIN users OpCheckBy on OpCheckBy.user_id = ul.check_by 
+                    INNER JOIN machines m on m.machine_id = ul.machine
+                    WHERE {$addon_query} ";
+                $data = $this->Api_model->raw_query_arr($query);
+                echo json_encode(array('status' => 'success', 'message'=>'ok', 'data'=>$data));
+            } else { echo json_encode(array('status' => 'error', 'message' => "value for key 'start_end_both' should be 'start', 'end' or 'both'!")); }
+
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
+    public function cleaning_log_for_machine()
+    {
+        // Check if token is valid
+        $user = $this->authUserToken([1,2]);
+        if ($user && ($user['is_admin']==1 || $user['is_super_admin']==1) ) {
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            $year = $_POST['year'];
+            $month = $this->_month_num_fix($_POST['month']);
+            $machine_id = $_POST['machine_id'];
+            $start_end_both = $_POST['start_end_both'];
+            if ($start_end_both == 'start' || $start_end_both == 'end' || $start_end_both == 'both'){
+
+                if($start_end_both == 'start'){
+                    $addon_query = " cl_st_time LIKE '{$year}-{$month}%' ";
+                } else if($start_end_both == 'end'){
+                    $addon_query = " cl_ed_time LIKE '{$year}-{$month}%' ";
+                } else{
+                    $addon_query = " cl_st_time LIKE '{$year}-{$month}%' AND cl_ed_time LIKE '{$year}-{$month}%'";
+                }
+    
+                $query = "SELECT DATE(cl.date) as cleaning_data, cl.shift, ul.product, ul.batch, cl_st_time, cl_ed_time, ClDoneBy.user_name as cleaning_done_by, ClCheckBy.user_name as cleaning_check_by, cl.remarks as cleaning_remark FROM `cleaning_logs` cl 
+                    LEFT JOIN usage_logs ul ON ul.log_id = cl.usage_log_id 
+                    LEFT JOIN users ClDoneBy on ClDoneBy.user_id = cl.done_by 
+                    LEFT JOIN users ClCheckBy on ClCheckBy.user_id = cl.check_by
+                    INNER JOIN machines m on m.machine_id = ul.machine
+                    WHERE ul.machine = {$machine_id} AND {$addon_query} ";
+                $data = $this->Api_model->raw_query_arr($query);
+                echo json_encode(array('status' => 'success', 'message'=>'ok', 'data'=>$data));
+            } else { echo json_encode(array('status' => 'error', 'message' => "value for key 'start_end_both' should be 'start', 'end' or 'both'!")); }
+
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }
+
+    public function cleaning_log_for_month()
+    {
+        // Check if token is valid
+        $user = $this->authUserToken([1,2]);
+        if ($user && ($user['is_admin']==1 || $user['is_super_admin']==1) ) {
+            $_POST = json_decode(file_get_contents('php://input'), true);
+            
+            $year = $_POST['year'];
+            $month = $this->_month_num_fix($_POST['month']);
+            $start_end_both = $_POST['start_end_both'];
+            if ($start_end_both == 'start' || $start_end_both == 'end' || $start_end_both == 'both'){
+
+                if($start_end_both == 'start'){
+                    $addon_query = " cl_st_time LIKE '{$year}-{$month}%' ";
+                } else if($start_end_both == 'end'){
+                    $addon_query = " cl_ed_time LIKE '{$year}-{$month}%' ";
+                } else{
+                    $addon_query = " cl_st_time LIKE '{$year}-{$month}%' AND cl_ed_time LIKE '{$year}-{$month}%'";
+                }
+    
+                $query = "SELECT DATE(cl.date) as cleaning_data, cl.shift, m.machine_name as machine_name, ul.product, ul.batch, cl_st_time, cl_ed_time, ClDoneBy.user_name as cleaning_done_by, ClCheckBy.user_name as cleaning_check_by, cl.remarks as cleaning_remark FROM `cleaning_logs` cl 
+                    LEFT JOIN usage_logs ul ON ul.log_id = cl.usage_log_id 
+                    LEFT JOIN users ClDoneBy on ClDoneBy.user_id = cl.done_by 
+                    LEFT JOIN users ClCheckBy on ClCheckBy.user_id = cl.check_by
+                    INNER JOIN machines m on m.machine_id = ul.machine
+                    WHERE {$addon_query} ";
+                $data = $this->Api_model->raw_query_arr($query);
+                echo json_encode(array('status' => 'success', 'message'=>'ok', 'data'=>$data));
+            } else { echo json_encode(array('status' => 'error', 'message' => "value for key 'start_end_both' should be 'start', 'end' or 'both'!")); }
+
+        } else {
+            // User not logged in
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized'));
+        }
+    }  
 
 
 }
